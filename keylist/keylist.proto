@@ -1,4 +1,7 @@
-package test;
+// -*- coding:utf-8 -*-
+syntax = "proto2";
+
+package keylist;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
@@ -6,7 +9,6 @@ option (gogoproto.sizer_all) = true;
 option (gogoproto.marshaler_all) = true;
 option (gogoproto.unmarshaler_all) = true;
 
-message Player {
-    required uint64 UserId  = 1 [(gogoproto.nullable) = false];
-    required string Name    = 2 [(gogoproto.nullable) = false]; 
+message Keylist {
+	repeated string keyList = 1;
 }

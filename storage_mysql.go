@@ -9,14 +9,14 @@ import (
 
 type MysqlEncoding interface {
 	GetKey(obj interface{}) storage_key.Key
-	GetString(key storage_key.Key) string
-	AddString(key storage_key.Key, obj interface{}) string
-	SetString(key storage_key.Key, obj interface{}) string
+	Get(key storage_key.Key) string
+	Add(obj interface{}) string
+	Set(obj interface{}) string
     // return "" -> transfer Get
-	MultiGetString(keys []storage_key.Key) string
+	MultiGet(keys []storage_key.Key) string
     // return "" -> transfer Set
-	MultiSetString(objMap map[storage_key.Key]interface{}) string
-	DeleteString(key storage_key.Key) string
+	MultiSet(objMap map[storage_key.Key]interface{}) string
+	Delete(key storage_key.Key) string
 	ReadRow(resultSet *sql.Rows) (interface{}, error)
 }
 
@@ -34,22 +34,22 @@ func NewMysqlStorage(db *sql.DB, encoding MysqlEncoding) MysqlStorage {
 }
 
 func (this MysqlStorage) Get(key storage_key.Key) (interface{}, error) {
-	return this.DatabaseTemplate.QueryObject(nil, this.encoding.GetString(key), this.encoding.ReadRow)
+	return this.DatabaseTemplate.QueryObject(nil, this.encoding.Get(key), this.encoding.ReadRow)
 }
 
 func (this MysqlStorage) Add(key storage_key.Key, object interface{}) error {
-	return this.DatabaseTemplate.Exec(nil, this.encoding.AddString(key, object))
+	return this.DatabaseTemplate.Exec(nil, this.encoding.Add(object))
 }
 
 func (this MysqlStorage) Set(key storage_key.Key, object interface{}) error {
-	return this.DatabaseTemplate.Exec(nil, this.encoding.AddString(key, object))
+	return this.DatabaseTemplate.Exec(nil, this.encoding.Set(object))
 }
 
 func (this MysqlStorage) MultiGet(keys []storage_key.Key) (map[storage_key.Key]interface{}, error) {
 	resultMap := make(map[storage_key.Key]interface{})
-	multiGetString := this.encoding.MultiGetString(keys)
-	if len(multiGetString) > 0 {
-		objList, err := this.DatabaseTemplate.QueryArray(nil, multiGetString, this.encoding.ReadRow)
+	execSql := this.encoding.MultiGet(keys)
+	if len(execSql) > 0 {
+		objList, err := this.DatabaseTemplate.QueryArray(nil, execSql, this.encoding.ReadRow)
 		if err != nil {
 			return nil, err
 		}
@@ -68,9 +68,9 @@ func (this MysqlStorage) MultiGet(keys []storage_key.Key) (map[storage_key.Key]i
 }
 
 func (this MysqlStorage) MultiSet(objectMap map[storage_key.Key]interface{}) error {
-	multiSetString := this.encoding.MultiSetString(objectMap)
-	if len(multiSetString) > 0 {
-		return this.DatabaseTemplate.Exec(nil, multiSetString)
+	execSql := this.encoding.MultiSet(objectMap)
+	if len(execSql) > 0 {
+		return this.DatabaseTemplate.Exec(nil, execSql)
 	} else {
 		for key, obj := range objectMap {
 			this.Set(key, obj)
@@ -80,7 +80,7 @@ func (this MysqlStorage) MultiSet(objectMap map[storage_key.Key]interface{}) err
 }
 
 func (this MysqlStorage) Delete(key storage_key.Key) error {
-	return this.DatabaseTemplate.Exec(nil, this.encoding.DeleteString(key))
+	return this.DatabaseTemplate.Exec(nil, this.encoding.Delete(key))
 }
 
 func (this MysqlStorage) FlushAll() {
