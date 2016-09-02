@@ -24,12 +24,11 @@ func produceStorge(table TableInfo) {
     file.WriteString(fmt.Sprintf("package %s\n\n", packageName))
     file.WriteString("import (\n\t\"database/sql\"\n\n\t\"github.com/dropbox/godropbox/memcache\"\n\t\"github.com/wgyuuu/storage\"\n)\n\n")
 
-    resultObjName, addStorageStr := "StorageProxy", ""
+    addStorageStr := ""
     if table.ColumnList.KeyCount() > 1 {
-        resultObjName = "ComplexStorage"
         addStorageStr = "Complex"
     }
-    file.WriteString(fmt.Sprintf("func New%sStorage(db *sql.DB, mc memcache.Client, prefereExpireTime int) storage.%s {\n", table.TableName, resultObjName))
+    file.WriteString(fmt.Sprintf("func New%sStorage(db *sql.DB, mc memcache.Client, prefereExpireTime int) storage.%sStorageProxy {\n", table.TableName, addStorageStr))
     file.WriteString(fmt.Sprintf("\tencoding := %sEncoding{}\n", table.TableName))
     file.WriteString(fmt.Sprintf("\tmsStorage := storage.New%sMysqlStorage(db, encoding)\n", addStorageStr))
     file.WriteString(fmt.Sprintf("\tmcStorage := storage.NewMemcStorage(mc, \"%s\", prefereExpireTime, encoding)\n", splitName(table.TableName)))

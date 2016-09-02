@@ -41,9 +41,9 @@ func produceEncoding(table TableInfo) {
 	}
 
 	file.WriteString(fmt.Sprintf("func (this *%s) Serial() ([]byte, error) {\n", table.TableName))
-	file.WriteString(fmt.Sprintf("\treturn pb.%s{\n", table.TableName))
+	file.WriteString(fmt.Sprintf("\t%s := pb.%s{\n", tableParamete, table.TableName))
 	file.WriteString(serialString)
-	file.WriteString("\t}.Marshal()\n}\n")
+	file.WriteString(fmt.Sprintf("\t}\n\treturn %s.Marshal()\n}\n", tableParamete))
 
 	file.WriteString(fmt.Sprintf("func (this *%s) UnSerial(bytes []byte) error {\n", table.TableName))
 	file.WriteString(fmt.Sprintf("\tvar %s pb.%s\n", tableParamete, table.TableName))
@@ -58,7 +58,7 @@ func produceEncoding(table TableInfo) {
 	// Marshal
 	file.WriteString(fmt.Sprintf("func (this %s) Marshal(obj interface{}) ([]byte, error) {\n", encodingName))
 	file.WriteString("\tif obj == nil {\n\t\treturn []byte{}, errors.New(\"obj nil\")\n\t}\n")
-	file.WriteString(fmt.Sprintf("\treturn obj.(%s).Serial()\n}\n", table.TableName))
+	file.WriteString(fmt.Sprintf("\t%s := obj.(%s)\n\treturn %s.Serial()\n}\n", tableParamete, table.TableName, tableParamete))
 	// Unmarshal
 	file.WriteString(fmt.Sprintf("func (this %s) Unmarshal(bytes []byte) (interface{}, error) {\n", encodingName))
 	file.WriteString(fmt.Sprintf("\t%s := %s{}\n", tableParamete, table.TableName))
@@ -112,7 +112,12 @@ func produceEncoding(table TableInfo) {
 		if k > 0 {
 			getSqlString += ", "
 		}
-		getSqlString += fmt.Sprintf("%s=%%s", name)
+		if table.ColumnList.IsString(name) {
+			getSqlString += fmt.Sprintf("%s='%%s'", name)
+		} else {
+			getSqlString += fmt.Sprintf("%s=%%s", name)
+		}
+
 	}
 	var getArgString string
 	for k := range listKeyName {
@@ -129,7 +134,7 @@ func produceEncoding(table TableInfo) {
 			if len(setSqlString) > 0 {
 				setSqlString += ", "
 			}
-			setSqlString += fmt.Sprintf("%s=%%%s", splitName(column.Name), column.SqlTyp)
+			setSqlString += fmt.Sprintf("%s=%s", splitName(column.Name), column.SqlTyp)
 			if len(setValueString1) > 0 {
 				setValueString1 += ", "
 			}
@@ -138,7 +143,7 @@ func produceEncoding(table TableInfo) {
 			if len(setWhereString) > 0 {
 				setWhereString += " and "
 			}
-			setWhereString += fmt.Sprintf("%s=%%%s", splitName(column.Name), column.SqlTyp)
+			setWhereString += fmt.Sprintf("%s=%s", splitName(column.Name), column.SqlTyp)
 			if len(setValueString2) > 0 {
 				setValueString2 += ", "
 			}
@@ -162,7 +167,7 @@ func produceEncoding(table TableInfo) {
 			addValueString += ", "
 		}
 		addSqlString += splitName(column.Name)
-		addTypeString += fmt.Sprintf("%%%s", column.SqlTyp)
+		addTypeString += fmt.Sprintf("%s", column.SqlTyp)
 		addValueString += fmt.Sprintf("%s.Get%s()", tableParamete, column.Name)
 	}
 	file.WriteString(fmt.Sprintf("\treturn fmt.Sprintf(\"%s) %s)\", %s)\n}\n", addSqlString, addTypeString, addValueString))
@@ -195,7 +200,11 @@ func produceEncoding(table TableInfo) {
 		}
 		getlistSqlString += name
 	}
-	getlistSqlString += fmt.Sprintf("from %s where %s=%%s", tableName, listKeyName[0])
+	if table.ColumnList.IsString(listKeyName[0]) {
+		getlistSqlString += fmt.Sprintf("from %s where %s='%%s'", tableName, listKeyName[0])
+	} else {
+		getlistSqlString += fmt.Sprintf("from %s where %s=%%s", tableName, listKeyName[0])
+	}
 	file.WriteString(fmt.Sprintf("\treturn fmt.Sprintf(\"%s\", key.ToString())\n}\n", getlistSqlString))
 
 	file.WriteString(fmt.Sprintf("func (this %s) ReadKeyRow(resultSet *sql.Rows) (interface{}, error) {\n", encodingName))

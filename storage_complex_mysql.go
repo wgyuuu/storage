@@ -35,6 +35,6 @@ func (this ComplexMysqlStorage) GetKeyList(key storage_key.Key) (keyList []stora
     return
 }
 
-func (this ComplexMysqlStorage) SetKeyList(key storage_key.Key, keyList []storage_key.Key) err {
+func (this ComplexMysqlStorage) SetKeyList(key storage_key.Key, keyList []storage_key.Key) error {
     return nil
 }

@@ -54,6 +54,7 @@ func (this MemcacheStorage) Set(key storage_key.Key, object interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	response := this.client.Set(&memcache.Item{Key: keyCache, Value: buf, Expiration: uint32(this.DefaultExpireTime)})
 	return response.Error()
 }

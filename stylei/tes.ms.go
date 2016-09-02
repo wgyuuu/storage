@@ -46,13 +46,14 @@ func (this *Tes) SetActor(actor string) {
 }
 
 func (this *Tes) Serial() ([]byte, error) {
-	return pb.Tes{
+	tes := pb.Tes{
 		UserId: this.UserId,
 		Level:  this.Level,
 		Name:   this.Name,
 		Gold:   this.Gold,
 		Actor:  this.Actor,
-	}.Marshal()
+	}
+	return tes.Marshal()
 }
 func (this *Tes) UnSerial(bytes []byte) error {
 	var tes pb.Tes
@@ -74,7 +75,8 @@ func (this TesEncoding) Marshal(obj interface{}) ([]byte, error) {
 	if obj == nil {
 		return []byte{}, errors.New("obj nil")
 	}
-	return obj.(Tes).Serial()
+	tes := obj.(Tes)
+	return tes.Serial()
 }
 func (this TesEncoding) Unmarshal(bytes []byte) (interface{}, error) {
 	tes := Tes{}
@@ -89,15 +91,15 @@ func (this TesEncoding) GetKey(obj interface{}) storage_key.Key {
 
 func (this TesEncoding) Get(key storage_key.Key) string {
 	keyList := key.ToStringList()
-	return fmt.Sprintf("select user_id, level, name, gold, actor from tes where user_id=%s, name=%s, level=%s", keyList[0], keyList[1], keyList[2])
+	return fmt.Sprintf("select user_id, level, name, gold, actor from tes where user_id=%s, name='%s', level=%s", keyList[0], keyList[1], keyList[2])
 }
 func (this TesEncoding) Set(obj interface{}) string {
 	tes := obj.(Tes)
-	return fmt.Sprintf("update tes set gold=%d, actor=%s where user_id=%d and level=%d and name=%s", tes.GetGold(), tes.GetActor(), tes.GetUserId(), tes.GetLevel(), tes.GetName())
+	return fmt.Sprintf("update tes set gold=%d, actor='%s' where user_id=%d and level=%d and name='%s'", tes.GetGold(), tes.GetActor(), tes.GetUserId(), tes.GetLevel(), tes.GetName())
 }
 func (this TesEncoding) Add(obj interface{}) string {
 	tes := obj.(Tes)
-	return fmt.Sprintf("insert into tes (user_id, level, name, gold, actor) values(%d, %d, %s, %d, %s)", tes.GetUserId(), tes.GetLevel(), tes.GetName(), tes.GetGold(), tes.GetActor())
+	return fmt.Sprintf("insert into tes (user_id, level, name, gold, actor) values(%d, %d, '%s', %d, '%s')", tes.GetUserId(), tes.GetLevel(), tes.GetName(), tes.GetGold(), tes.GetActor())
 }
 func (this TesEncoding) MultiGet(keyList []storage_key.Key) string {
 	return ""

@@ -2,13 +2,12 @@ package storage
 
 import (
 	"github.com/dropbox/godropbox/memcache"
-	"github.com/wgyuuu/storage"
 	"github.com/wgyuuu/storage/keylist"
 	"github.com/wgyuuu/storage_key"
 )
 
 func (this MemcacheStorage) GetKeyList(key storage_key.Key) ([]storage_key.Key, error) {
-	cacheKey, err := storage.BuildCacheKey(this.KeyPrefix, key)
+	cacheKey, err := BuildCacheKey(this.KeyPrefix, key)
 	if err != nil {
 		return []storage_key.Key{}, err
 	}
@@ -19,7 +18,7 @@ func (this MemcacheStorage) GetKeyList(key storage_key.Key) ([]storage_key.Key, 
 	}
 
 	var kl keylist.Keylist
-	err := kl.Unmarshal(item.Value())
+	err = kl.Unmarshal(item.Value())
 	if err != nil {
 		return []storage_key.Key{}, err
 	}
@@ -30,8 +29,8 @@ func (this MemcacheStorage) GetKeyList(key storage_key.Key) ([]storage_key.Key, 
 func (this MemcacheStorage) SetKeyList(key storage_key.Key, keyList []storage_key.Key) error {
 	var kl keylist.Keylist
 	for _, key := range keyList {
-        kl.KeyList == append(kl.KeyList, key.ToString())
+		kl.KeyList = append(kl.KeyList, key.ToString())
 	}
 
-    return this.Set(key, kl)
+	return this.Set(key, kl)
 }

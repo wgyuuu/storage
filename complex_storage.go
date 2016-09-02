@@ -14,10 +14,7 @@ type ComplexStorageProxy struct {
 }
 
 func NewComplexStorageProxy(prefered, backup ComplexStorage) ComplexStorageProxy {
-	return ComplexStorageProxy{
-		PreferedStorage: prefered,
-		BackupStorage:   backup,
-	}
+	return ComplexStorageProxy{NewStorageProxy(prefered, backup)}
 }
 
 func (this ComplexStorageProxy) GetKeyList(key storage_key.Key) (keyList []storage_key.Key, err error) {
@@ -36,7 +33,7 @@ func (this ComplexStorageProxy) GetKeyList(key storage_key.Key) (keyList []stora
 }
 
 // 不支持插入
-func (this ComplexStorageProxy) SetKeyList(key storage_key.Key, keyList storage_key.Key) error {
+func (this ComplexStorageProxy) SetKeyList(key storage_key.Key, keyList []storage_key.Key) error {
 	err := this.BackupStorage.(ComplexStorage).SetKeyList(key, keyList)
 	if err != nil {
 		return err

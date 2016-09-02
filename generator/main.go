@@ -67,6 +67,17 @@ func (this ColumnInfoList) CheckPrimary() {
 	}
 	this[0].Attr.PrimaryKey = 1
 }
+func (this ColumnInfoList) IsString(name string) bool {
+	for _, column := range this {
+		if column.Name == name || splitName(column.Name) == name {
+			if column.Typ == "string" {
+				return true
+			}
+			break
+		}
+	}
+	return false
+}
 
 var (
 	fileFullPath string
@@ -221,9 +232,9 @@ func columnBase(data string) (name, typ string) {
 func getSqlType(typ string) (sqlType string) {
 	switch typ {
 	case "string":
-		sqlType = "s"
+		sqlType = "'%s'"
 	default:
-		sqlType = "d"
+		sqlType = "%d"
 	}
 	return
 }
