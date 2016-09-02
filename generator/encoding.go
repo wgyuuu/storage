@@ -21,7 +21,7 @@ func produceEncoding(table TableInfo) {
 	tableParamete := parameter(table.TableName)
 
 	file.WriteString(fmt.Sprintf("package %s\n\n", packageName))
-	file.WriteString(fmt.Sprintf("import (\n\t\"database/sql\"\n\t\"errors\"\n\t\"fmt\"\n\n\t\"%s/pb\"\n\t\"github.com/wgyuuu/storage_key\"\n)\n\n", pathDir))
+	file.WriteString(fmt.Sprintf("import (\n\t\"database/sql\"\n\t\"errors\"\n\t\"fmt\"\n\t\"time\"\n\n\t\"%s/pb\"\n\t\"github.com/wgyuuu/storage_key\"\n)\n\n", pathDir))
 
 	file.WriteString("// 结构体方法\n")
 	for _, column := range table.ColumnList {
@@ -36,8 +36,12 @@ func produceEncoding(table TableInfo) {
 	var serialString, unSerialString string = "", ""
 	serialFormat := fmt.Sprintf("\t\t%%-%ds this.%%s,\n", table.ColumnList.MaxNameLen()+1)
 	for _, column := range table.ColumnList {
-		serialString += fmt.Sprintf(serialFormat, column.Name+":", column.Name)
-		unSerialString += fmt.Sprintf("\tthis.%s = %s.%s\n", column.Name, tableParamete, column.Name)
+		serialString += fmt.Sprintf(serialFormat, column.Name+":", toProtoName(column.Typ, column.Name))
+		if column.Typ == "time.Time" {
+			unSerialString += fmt.Sprintf("\tthis.%s = time.Unix(%s.%s, 0)\n", column.Name, tableParamete, column.Name)
+		} else {
+			unSerialString += fmt.Sprintf("\tthis.%s = %s.%s\n", column.Name, tableParamete, column.Name)
+		}
 	}
 
 	file.WriteString(fmt.Sprintf("func (this *%s) Serial() ([]byte, error) {\n", table.TableName))
@@ -90,27 +94,43 @@ func produceEncoding(table TableInfo) {
 	// 处理过的表名
 	tableName := splitName(table.TableName)
 
+	listKeyName := make([]string, table.ColumnList.KeyCount())
+	for _, column := range table.ColumnList {
+		if column.Attr.PrimaryKey > 0 {
+			listKeyName[column.Attr.PrimaryKey-1] = splitName(column.Name)
+		}
+	}
+
+	// sql create
+	file.WriteString("/*\n")
+	file.WriteString(fmt.Sprintf("create table if not exists %s (\n", tableName))
+	for _, column := range table.ColumnList {
+		file.WriteString(fmt.Sprintf("\t%s %s not null default %s%s,\n", splitName(column.Name), getCreateType(column.Typ, column.Attr.VarcharLen), GetDefault(column.Typ), getComment(column.Attr.Comment)))
+	}
+	file.WriteString("\tprimary key(")
+	for k, name := range listKeyName {
+		if k > 0 {
+			file.WriteString(", ")
+		}
+		file.WriteString(name)
+	}
+	file.WriteString(")\n\t)engine=InnoDB default charset=utf8;\n")
+	file.WriteString("*/\n")
 	// sql method
 	// Get
 	file.WriteString(fmt.Sprintf("func (this %s) Get(key storage_key.Key) string {\n", encodingName))
 	file.WriteString("\tkeyList := key.ToStringList()\n")
-	listKeyName := make([]string, table.ColumnList.KeyCount())
 	getSqlString := "select "
 	for k, column := range table.ColumnList {
 		if k > 0 {
 			getSqlString += ", "
 		}
-		columnName := splitName(column.Name)
-
-		getSqlString += columnName
-		if column.Attr.PrimaryKey > 0 {
-			listKeyName[column.Attr.PrimaryKey-1] = columnName
-		}
+		getSqlString += splitName(column.Name)
 	}
 	getSqlString += fmt.Sprintf(" from %s where ", tableName)
 	for k, name := range listKeyName {
 		if k > 0 {
-			getSqlString += ", "
+			getSqlString += " and "
 		}
 		if table.ColumnList.IsString(name) {
 			getSqlString += fmt.Sprintf("%s='%%s'", name)
@@ -267,4 +287,54 @@ func splitName(name string) string {
 
 func parameter(name string) string {
 	return strings.ToLower(name[:1]) + name[1:]
+}
+
+func getCreateType(typ string, varcharLen int) (createType string) {
+	switch typ {
+	case "string":
+		if varcharLen == 0 {
+			varcharLen = 128
+		}
+		createType = fmt.Sprintf("varchar(%d)", varcharLen)
+	case "time.Time":
+		createType = "timestamp"
+	case "int64", "uint64":
+		createType = "bigint(20)"
+	case "int32", "uint32":
+		createType = "int(11)"
+	case "int", "uint":
+		createType = "int(11)"
+	case "int16", "uint16":
+		createType = "smallint(8)"
+	case "int8", "uint8":
+		createType = "tinyint(4)"
+	}
+	return
+}
+
+func getComment(comment string) string {
+	if len(comment) == 0 {
+		return ""
+	}
+
+	return fmt.Sprintf(" comment '%s'", comment)
+}
+
+func GetDefault(typ string) (def string) {
+	switch typ {
+	case "time.Time":
+		def = "current_timestamp"
+	case "string":
+		def = "''"
+	default:
+		def = "0"
+	}
+	return
+}
+
+func toProtoName(typ, name string) string {
+	if typ == "time.Time" {
+		name += ".Unix()"
+	}
+	return name
 }

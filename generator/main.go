@@ -17,6 +17,7 @@ const (
 	MYSQL       string = "mysql:"
 	PRIMARY_KEY string = "primary_key"
 	VARCHAR     string = "varchar"
+	COMMENT     string = "comment"
 )
 
 type TableInfo struct {
@@ -32,6 +33,7 @@ type ColumnInfo struct {
 type AttrInfo struct {
 	PrimaryKey int
 	VarcharLen int
+	Comment    string
 }
 type ColumnInfoList []ColumnInfo
 
@@ -233,6 +235,8 @@ func getSqlType(typ string) (sqlType string) {
 	switch typ {
 	case "string":
 		sqlType = "'%s'"
+	case "time.Time":
+		sqlType = "'%.19s'"
 	default:
 		sqlType = "%d"
 	}
@@ -257,6 +261,7 @@ func columnAttr(data string) (attr AttrInfo) {
 
 	primaryLen := len(PRIMARY_KEY)
 	varcharLen := len(VARCHAR)
+	commentLen := len(COMMENT)
 	for _, v := range strings.Split(attrString, ",") {
 		switch {
 		case v[:primaryLen] == PRIMARY_KEY:
@@ -268,6 +273,10 @@ func columnAttr(data string) (attr AttrInfo) {
 		case v[:varcharLen] == VARCHAR:
 			if len(v) > varcharLen {
 				attr.VarcharLen, _ = strconv.Atoi(v[varcharLen+1:])
+			}
+		case v[:commentLen] == COMMENT:
+			if len(v) > commentLen+1 {
+				attr.Comment = v[varcharLen+1:]
 			}
 		}
 	}

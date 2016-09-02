@@ -5,6 +5,7 @@ import (
 	"log"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/dropbox/godropbox/memcache"
 	"github.com/wgyuuu/storage"
@@ -83,8 +84,10 @@ func TestMemcache(t *testing.T) {
 		Name:   "wang",
 		Gold:   100011,
 		Actor:  "aaa",
+		Time:   time.Now(),
 	}
-	myStorage.Add(encoding.GetKey(tes), tes)
+	err := myStorage.Add(encoding.GetKey(tes), tes)
+	t.Log(err)
 	myStorage.PushKey(storage_key.Uint64(tes.GetUserId()), encoding.GetKey(tes))
 	tes.Level = 2
 	myStorage.Add(encoding.GetKey(tes), tes)
@@ -99,4 +102,13 @@ func TestMemcache(t *testing.T) {
 	myStorage.PushKey(storage_key.Uint64(tes.GetUserId()), encoding.GetKey(tes))
 	keyList, err = myStorage.PreferedStorage.(storage.MemcacheStorage).GetKeyList(storage_key.Uint64(tes.GetUserId()))
 	t.Log("keylist2:", keyList, err)
+}
+
+func TestGet(t *testing.T) {
+	myStorage := NewTesStorage(db, mc, 5)
+	keyList, _ := myStorage.GetKeyList(storage_key.Uint64(11))
+	for _, key := range keyList {
+		obj, err := myStorage.Get(key)
+		t.Log(key, "->", obj, err)
+	}
 }

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/wgyuuu/storage/stylei/pb"
 	"github.com/wgyuuu/storage_key"
@@ -45,6 +46,13 @@ func (this *Tes) SetActor(actor string) {
 	this.Actor = actor
 }
 
+func (this *Tes) GetTime() time.Time {
+	return this.Time
+}
+func (this *Tes) SetTime(time time.Time) {
+	this.Time = time
+}
+
 func (this *Tes) Serial() ([]byte, error) {
 	tes := pb.Tes{
 		UserId: this.UserId,
@@ -52,6 +60,7 @@ func (this *Tes) Serial() ([]byte, error) {
 		Name:   this.Name,
 		Gold:   this.Gold,
 		Actor:  this.Actor,
+		Time:   this.Time.Unix(),
 	}
 	return tes.Marshal()
 }
@@ -65,6 +74,7 @@ func (this *Tes) UnSerial(bytes []byte) error {
 	this.Name = tes.Name
 	this.Gold = tes.Gold
 	this.Actor = tes.Actor
+	this.Time = time.Unix(tes.Time, 0)
 	return nil
 }
 
@@ -89,17 +99,28 @@ func (this TesEncoding) GetKey(obj interface{}) storage_key.Key {
 	return storage_key.NewKeyList(storage_key.Uint64(tes.UserId), storage_key.String(tes.Name), storage_key.Int32(tes.Level))
 }
 
+/*
+create table if not exists tes (
+	user_id bigint(20) not null default 0 comment '玩家id',
+	level int(11) not null default 0,
+	name varchar(128) not null default '',
+	gold int(11) not null default 0,
+	actor varchar(512) not null default '',
+	time timestamp not null default current_timestamp,
+	primary key(user_id, name, level)
+	)engine=InnoDB default charset=utf8;
+*/
 func (this TesEncoding) Get(key storage_key.Key) string {
 	keyList := key.ToStringList()
-	return fmt.Sprintf("select user_id, level, name, gold, actor from tes where user_id=%s, name='%s', level=%s", keyList[0], keyList[1], keyList[2])
+	return fmt.Sprintf("select user_id, level, name, gold, actor, time from tes where user_id=%s and name='%s' and level=%s", keyList[0], keyList[1], keyList[2])
 }
 func (this TesEncoding) Set(obj interface{}) string {
 	tes := obj.(Tes)
-	return fmt.Sprintf("update tes set gold=%d, actor='%s' where user_id=%d and level=%d and name='%s'", tes.GetGold(), tes.GetActor(), tes.GetUserId(), tes.GetLevel(), tes.GetName())
+	return fmt.Sprintf("update tes set gold=%d, actor='%s', time='%.19s' where user_id=%d and level=%d and name='%s'", tes.GetGold(), tes.GetActor(), tes.GetTime(), tes.GetUserId(), tes.GetLevel(), tes.GetName())
 }
 func (this TesEncoding) Add(obj interface{}) string {
 	tes := obj.(Tes)
-	return fmt.Sprintf("insert into tes (user_id, level, name, gold, actor) values(%d, %d, '%s', %d, '%s')", tes.GetUserId(), tes.GetLevel(), tes.GetName(), tes.GetGold(), tes.GetActor())
+	return fmt.Sprintf("insert into tes (user_id, level, name, gold, actor, time) values(%d, %d, '%s', %d, '%s', '%.19s')", tes.GetUserId(), tes.GetLevel(), tes.GetName(), tes.GetGold(), tes.GetActor(), tes.GetTime())
 }
 func (this TesEncoding) MultiGet(keyList []storage_key.Key) string {
 	return ""
@@ -118,6 +139,7 @@ func (this TesEncoding) ReadRow(resultSet *sql.Rows) (interface{}, error) {
 		&tes.Name,
 		&tes.Gold,
 		&tes.Actor,
+		&tes.Time,
 	)
 	return tes, err
 }

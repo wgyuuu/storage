@@ -33,7 +33,7 @@ func produceProto(table TableInfo) {
 	file.WriteString(fmt.Sprintf("message %s {\n", table.TableName))
 	format := fmt.Sprintf("\trequired %%-%ds %%-%ds = %%d [(gogoproto.nullable) = false];\n", table.ColumnList.MaxTypLen(), table.ColumnList.MaxNameLen())
 	for k, column := range table.ColumnList {
-		file.WriteString(fmt.Sprintf(format, column.Typ, strings.ToLower(column.Name[:1])+column.Name[1:], k+1))
+		file.WriteString(fmt.Sprintf(format, getProtoTyp(column.Typ), strings.ToLower(column.Name[:1])+column.Name[1:], k+1))
 	}
 	file.WriteString("}\n")
 }
@@ -47,4 +47,11 @@ func execBuildProto(fileName string) {
 	if err != nil {
 		log.Printf("[error]:run protoc error(%s).\n", err.Error())
 	}
+}
+
+func getProtoTyp(typ string) string {
+	if typ == "time.Time" {
+		typ = "int64"
+	}
+	return typ
 }
