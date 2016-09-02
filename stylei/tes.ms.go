@@ -124,7 +124,7 @@ func (this TesEncoding) ReadRow(resultSet *sql.Rows) (interface{}, error) {
 
 // Complex
 func (this TesEncoding) GetKeyList(key storage_key.Key) string {
-	return fmt.Sprintf("select user_id, name, levelfrom tes where user_id=%s", key.ToString())
+	return fmt.Sprintf("select user_id, name, level from tes where user_id=%s", key.ToString())
 }
 func (this TesEncoding) ReadKeyRow(resultSet *sql.Rows) (interface{}, error) {
 	var userId uint64

@@ -201,9 +201,9 @@ func produceEncoding(table TableInfo) {
 		getlistSqlString += name
 	}
 	if table.ColumnList.IsString(listKeyName[0]) {
-		getlistSqlString += fmt.Sprintf("from %s where %s='%%s'", tableName, listKeyName[0])
+		getlistSqlString += fmt.Sprintf(" from %s where %s='%%s'", tableName, listKeyName[0])
 	} else {
-		getlistSqlString += fmt.Sprintf("from %s where %s=%%s", tableName, listKeyName[0])
+		getlistSqlString += fmt.Sprintf(" from %s where %s=%%s", tableName, listKeyName[0])
 	}
 	file.WriteString(fmt.Sprintf("\treturn fmt.Sprintf(\"%s\", key.ToString())\n}\n", getlistSqlString))
 

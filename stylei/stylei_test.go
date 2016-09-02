@@ -14,6 +14,8 @@ import (
 var (
 	db *sql.DB
 	mc memcache.Client
+
+	encoding TesEncoding
 )
 
 func logError(err error) {
@@ -35,6 +37,8 @@ func init() {
 }
 
 func create() {
+	encoding = TesEncoding{}
+
 	newMysql()
 	newMemcache()
 }
@@ -64,8 +68,35 @@ func TestStorage(t *testing.T) {
 		Gold:   100011,
 		Actor:  "aaa",
 	}
-	err := storage.Set(storage_key.Uint64(11), tes)
+	err := storage.Set(encoding.GetKey(tes), tes)
 	t.Log(err)
-    aa, err := storage.Get(storage_key.Uint64(11))
-    t.Log(aa, err)
+	aa, err := storage.Get(storage_key.Uint64(11))
+	t.Log(aa, err)
+}
+
+func TestMemcache(t *testing.T) {
+	myStorage := NewTesStorage(db, mc, 5)
+
+	tes := Tes{
+		UserId: 11,
+		Level:  1,
+		Name:   "wang",
+		Gold:   100011,
+		Actor:  "aaa",
+	}
+	myStorage.Add(encoding.GetKey(tes), tes)
+	myStorage.PushKey(storage_key.Uint64(tes.GetUserId()), encoding.GetKey(tes))
+	tes.Level = 2
+	myStorage.Add(encoding.GetKey(tes), tes)
+	myStorage.PushKey(storage_key.Uint64(tes.GetUserId()), encoding.GetKey(tes))
+	keyList, err := myStorage.PreferedStorage.(storage.MemcacheStorage).GetKeyList(storage_key.Uint64(tes.GetUserId()))
+	t.Log("keylist1:", keyList, err)
+
+	myStorage.FlushAll()
+	tes.Name = "wwww"
+	tes.Level = 3
+	myStorage.Add(encoding.GetKey(tes), tes)
+	myStorage.PushKey(storage_key.Uint64(tes.GetUserId()), encoding.GetKey(tes))
+	keyList, err = myStorage.PreferedStorage.(storage.MemcacheStorage).GetKeyList(storage_key.Uint64(tes.GetUserId()))
+	t.Log("keylist2:", keyList, err)
 }

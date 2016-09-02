@@ -32,5 +32,15 @@ func (this MemcacheStorage) SetKeyList(key storage_key.Key, keyList []storage_ke
 		kl.KeyList = append(kl.KeyList, key.ToString())
 	}
 
-	return this.Set(key, kl)
+	buf, err := kl.Marshal()
+	if err != nil {
+		return err
+	}
+	keyCache, err := BuildCacheKey(this.KeyPrefix, key)
+	if err != nil {
+		return err
+	}
+
+	response := this.client.Set(&memcache.Item{Key: keyCache, Value: buf, Expiration: uint32(this.DefaultExpireTime)})
+	return response.Error()
 }
