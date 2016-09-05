@@ -10,3 +10,4 @@ generator ./entity.go
 
 #
 暂时不支持time.Time作为key
+storage文件生成就不会再替换，所以可以根据具体需求修改
