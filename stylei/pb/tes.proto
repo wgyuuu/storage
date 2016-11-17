@@ -9,7 +9,7 @@ option (gogoproto.sizer_all) = true;
 option (gogoproto.marshaler_all) = true;
 option (gogoproto.unmarshaler_all) = true;
 
-message User {
+message Tes {
 	required uint64    userId = 1 [(gogoproto.nullable) = false];
 	required int32     level  = 2 [(gogoproto.nullable) = false];
 	required string    name   = 3 [(gogoproto.nullable) = false];
