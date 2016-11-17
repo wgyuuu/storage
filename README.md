@@ -6,7 +6,7 @@ go get -u github.com/0studio/redisapi
 
 #test
 cd stylei
-generator ./entity.go
+generator -f ./entity.go
 
 #nocite
 暂时不支持time.Time作为key

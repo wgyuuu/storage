@@ -2,7 +2,7 @@ package stylei
 
 import "time"
 
-type Tes struct {
+type User struct {
 	UserId uint64 `mysql:"primary_key=1,comment=玩家ID"`
 	Level  int32  `mysql:"primary_key=3"`
 	Name   string `mysql:"primary_key=2,varchar=128"`

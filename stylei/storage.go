@@ -7,9 +7,9 @@ import (
 	"github.com/wgyuuu/storage"
 )
 
-func NewTesStorage(db *sql.DB, mc memcache.Client, prefereExpireTime int) storage.ComplexStorageProxy {
-	encoding := TesEncoding{}
+func NewUserStorage(db *sql.DB, mc memcache.Client, prefereExpireTime int) storage.ComplexStorageProxy {
+	encoding := UserEncoding{}
 	msStorage := storage.NewComplexMysqlStorage(db, encoding)
-	mcStorage := storage.NewMemcStorage(mc, "tes", prefereExpireTime, encoding)
+	mcStorage := storage.NewMemcStorage(mc, "user", prefereExpireTime, encoding)
 	return storage.NewComplexStorageProxy(mcStorage, msStorage)
 }
