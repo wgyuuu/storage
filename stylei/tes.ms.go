@@ -98,7 +98,6 @@ func (this TesEncoding) GetKey(obj interface{}) storage_key.Key {
 	tes := obj.(Tes)
 	return storage_key.NewKeyList(storage_key.Uint64(tes.UserId), storage_key.String(tes.Name), storage_key.Int32(tes.Level))
 }
-
 /*
 create table if not exists tes (
 	user_id bigint(20) not null default 0 comment '玩家id',

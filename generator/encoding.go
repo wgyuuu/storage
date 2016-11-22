@@ -90,10 +90,10 @@ func produceEncoding(table TableInfo) {
 		keyListString += ")\n"
 		file.WriteString(keyListString)
 	}
-	file.WriteString("}\n\n")
+	file.WriteString("}\n")
+	
 	// 处理过的表名
 	tableName := splitName(table.TableName)
-
 	listKeyName := make([]string, table.ColumnList.KeyCount())
 	for _, column := range table.ColumnList {
 		if column.Attr.PrimaryKey > 0 {

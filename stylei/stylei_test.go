@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/0studio/redisapi"
 	"github.com/dropbox/godropbox/memcache"
 	"github.com/wgyuuu/storage"
 	"github.com/wgyuuu/storage_key"
@@ -15,6 +16,7 @@ import (
 var (
 	db *sql.DB
 	mc memcache.Client
+	rd redisapi.Redis
 
 	encoding TesEncoding
 )
@@ -42,6 +44,7 @@ func create() {
 
 	newMysql()
 	newMemcache()
+	newRedis()
 }
 
 func newMemcache() {
@@ -60,6 +63,10 @@ func newMysql() {
 	db.SetMaxIdleConns(5)
 }
 
+func newRedis() {
+	rd, _ = storage.NewRedisClient("localhost:6379")
+}
+
 func TestStorage(t *testing.T) {
 	storage := NewTesStorage(db, mc, 5)
 	tes := Tes{
@@ -71,7 +78,7 @@ func TestStorage(t *testing.T) {
 	}
 	err := storage.Set(encoding.GetKey(tes), tes)
 	t.Log(err)
-	aa, err := storage.Get(storage_key.Uint64(11))
+	aa, err := storage.Get(encoding.GetKey(tes))
 	t.Log(aa, err)
 }
 
@@ -92,7 +99,7 @@ func TestMemcache(t *testing.T) {
 	tes.Level = 2
 	myStorage.Add(encoding.GetKey(tes), tes)
 	myStorage.PushKey(storage_key.Uint64(tes.GetUserId()), encoding.GetKey(tes))
-	keyList, err := myStorage.PreferedStorage.(storage.MemcacheStorage).GetKeyList(storage_key.Uint64(tes.GetUserId()))
+	keyList, err := myStorage.PreferedStorage.(storage.ComplexStorage).GetKeyList(storage_key.Uint64(tes.GetUserId()))
 	t.Log("keylist1:", keyList, err)
 
 	myStorage.FlushAll()
@@ -100,7 +107,7 @@ func TestMemcache(t *testing.T) {
 	tes.Level = 3
 	myStorage.Add(encoding.GetKey(tes), tes)
 	myStorage.PushKey(storage_key.Uint64(tes.GetUserId()), encoding.GetKey(tes))
-	keyList, err = myStorage.PreferedStorage.(storage.MemcacheStorage).GetKeyList(storage_key.Uint64(tes.GetUserId()))
+	keyList, err = myStorage.PreferedStorage.(storage.ComplexStorage).GetKeyList(storage_key.Uint64(tes.GetUserId()))
 	t.Log("keylist2:", keyList, err)
 }
 
@@ -111,4 +118,34 @@ func TestGet(t *testing.T) {
 		obj, err := myStorage.Get(key)
 		t.Log(key, "->", obj, err)
 	}
+}
+
+func TestRedisMysql(t *testing.T) {
+	msStorage := storage.NewComplexMysqlStorage(db, encoding)
+	rdStorage := storage.NewComplexRedisStorage(rd, "tes", 100, encoding)
+	myStorage := storage.NewComplexStorageProxy(rdStorage, msStorage)
+
+	tes := Tes{
+		UserId: 11,
+		Level:  1,
+		Name:   "wang",
+		Gold:   100011,
+		Actor:  "aaa",
+		Time:   time.Now(),
+	}
+	err := myStorage.Add(encoding.GetKey(tes), tes)
+	t.Log(err)
+	myStorage.PushKey(storage_key.Uint64(tes.GetUserId()), encoding.GetKey(tes))
+	tes.Level = 2
+	myStorage.Add(encoding.GetKey(tes), tes)
+	myStorage.PushKey(storage_key.Uint64(tes.GetUserId()), encoding.GetKey(tes))
+	keyList, err := myStorage.PreferedStorage.(storage.ComplexStorage).GetKeyList(storage_key.Uint64(tes.GetUserId()))
+	t.Log("keylist1:", keyList, err)
+
+	tes.Name = "wwww"
+	tes.Level = 3
+	myStorage.Add(encoding.GetKey(tes), tes)
+	myStorage.PushKey(storage_key.Uint64(tes.GetUserId()), encoding.GetKey(tes))
+	keyList, err = myStorage.PreferedStorage.(storage.ComplexStorage).GetKeyList(storage_key.Uint64(tes.GetUserId()))
+	t.Log("keylist2:", keyList, err)
 }

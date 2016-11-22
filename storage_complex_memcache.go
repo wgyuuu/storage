@@ -11,7 +11,6 @@ func (this MemcacheStorage) GetKeyList(key storage_key.Key) ([]storage_key.Key, 
 	if err != nil {
 		return []storage_key.Key{}, err
 	}
-
 	item := this.client.Get(cacheKey)
 	if item.Error() != nil || item.Status() != memcache.StatusNoError {
 		return []storage_key.Key{}, item.Error()
@@ -23,7 +22,11 @@ func (this MemcacheStorage) GetKeyList(key storage_key.Key) ([]storage_key.Key, 
 		return []storage_key.Key{}, err
 	}
 
-	return storage_key.KeyListForStrList(kl.GetKeyList()), nil
+	var keyList []storage_key.Key
+	for _, key := range kl.GetKeyList() {
+		keyList = append(keyList, storage_key.NewKeyForString(key))
+	}
+	return keyList, nil
 }
 
 func (this MemcacheStorage) SetKeyList(key storage_key.Key, keyList []storage_key.Key) error {

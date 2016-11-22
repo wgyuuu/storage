@@ -296,7 +296,7 @@ func getSpecifyDir(dir string) (pathDir string) {
 		case dir2[0] == '/':
 			loop = false
 			pathDir = dir2
-		case dir2[0] == '.':
+		case dir2 == ".":
 			loop = false
 			pathDir = currentDir
 		case dir2[:2] == "./":
